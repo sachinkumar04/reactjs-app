@@ -1,8 +1,12 @@
 name: React.js CI
 
 on:
+  push:
+    branches:
+      - main  # Trigger on push to main
   pull_request:
-    branches: "main"
+    branches:
+      - main  # Trigger on pull request to main
 
 jobs:
   frontend-test:
