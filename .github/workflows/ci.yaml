@@ -50,7 +50,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.USER_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: quiz-app3
+          projectBaseDir: quiz-app
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
