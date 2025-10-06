@@ -179,7 +179,7 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend-js    
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@latest  # Stable version
+        uses: aquasecurity/trivy-action@v0.17  # Stable version
         with:
           image-ref: 'docker.io/${{ secrets.DOCKER_USERNAME }}/frontend-js'
           format: 'sarif'
@@ -225,7 +225,7 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/backend-api    
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@latest  # Stable version
+        uses: aquasecurity/trivy-action@v0.17  # Stable version
         with:
           image-ref: 'docker.io/${{ secrets.DOCKER_USERNAME }}/backend-api'
           format: 'sarif'
