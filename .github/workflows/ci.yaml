@@ -6,7 +6,7 @@ on:
       - main  # Trigger on push to main
   pull_request:
     branches:
-      - main  # Trigger on pull request to main bra
+      - main  # Trigger on pull request to main
 
 jobs:
   frontend-test:
@@ -19,7 +19,7 @@ jobs:
         node-version: [20.x]
         architecture: [x64]
     steps:
-      - name: Check-out git repository  
+      - name: Check-out git repository
         uses: actions/checkout@v4
 
       - name: USE NODEJS ${{ matrix.node-version }} - ${{ matrix.architecture }}
@@ -199,7 +199,7 @@ jobs:
         working-directory: ./quiz-app
 
       - name: Run Snyk to check for vulnerabilities in the Docker image
-        uses: snyk/actions/docker@v1  # Stable version of snyk docker action
+        uses: snyk/actions/docker@v1  # Stable version
         with:
           image: ${{ secrets.DOCKER_USERNAME }}/frontend-js
           args: --file=quiz-app/Dockerfile --severity-threshold=high
