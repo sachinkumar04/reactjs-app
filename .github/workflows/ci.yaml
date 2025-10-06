@@ -6,7 +6,7 @@ on:
       - main  # Trigger on push to main
   pull_request:
     branches:
-      - main  # Trigger on pull request to main
+      - main  # Trigger on pull request to main bra
 
 jobs:
   frontend-test:
@@ -28,7 +28,7 @@ jobs:
       - name: Install project dependencies 
         working-directory: ./quiz-app
         run: |
-          npm install
+          npm i
           npm run lint
           npm install --save-dev --save-exact prettier
           npm run prettier
@@ -45,12 +45,12 @@ jobs:
         uses: warchant/setup-sonar-scanner@v8
 
       - name: Analyze with SonarCloud
-        uses: sonarsource/sonarcloud-github-action@main
+        uses: sonarsource/sonarcloud-github-action@v2  # Stable version
         env:
           GITHUB_TOKEN: ${{ secrets.USER_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: quiz-app3
+          projectBaseDir: quiz-app
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
@@ -78,20 +78,20 @@ jobs:
       - name: Install project dependencies 
         working-directory: ./backend
         run: |
-          npm install
+          npm i
           npm run lint
           npm install --save-dev --save-exact prettier
           npm run prettier
           npm test
         env:
-          CI: true 
+          CI: true
 
       # Setup sonar-scanner with quality
       - name: Setup SonarQube
         uses: warchant/setup-sonar-scanner@v8
 
       - name: Analyze with SonarCloud
-        uses: sonarsource/sonarcloud-github-action@main
+        uses: sonarsource/sonarcloud-github-action@v2  # Stable version
         env:
           GITHUB_TOKEN: ${{ secrets.USER_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -104,7 +104,6 @@ jobs:
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
             -Dsonar.sources=.
             -Dsonar.verbose=true
-          
 
   frontend-security:
     needs: frontend-test
@@ -115,13 +114,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@v3
-        continue-on-error: true  # To make sure that SARIF upload gets called
+        uses: snyk/actions/node@v1  # Stable version of snyk node action
+        continue-on-error: true # To make sure that SARIF upload gets called
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           
       - name: Install Snyk CLI
-        uses: snyk/actions/setup@v3
+        uses: snyk/actions/setup@v1  # Stable version of snyk setup action
         with:
           version: latest
         env:
@@ -143,13 +142,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@v3
-        continue-on-error: true  # To make sure that SARIF upload gets called
+        uses: snyk/actions/node@v1  # Stable version of snyk node action
+        continue-on-error: true # To make sure that SARIF upload gets called
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
          
       - name: Install Snyk CLI
-        uses: snyk/actions/setup@v3
+        uses: snyk/actions/setup@v1  # Stable version of snyk setup action
         with:
           version: latest
         env:
@@ -170,48 +169,43 @@ jobs:
       security-events: write 
       actions: read
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
     
-    - name: Build and push frontend Docker image
-      working-directory: ./quiz-app
-      run: |
-        docker build . -t ${{ secrets.DOCKER_USERNAME }}/frontend-js
-        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin 
-        docker push ${{ secrets.DOCKER_USERNAME }}/frontend-js    
+      - name: Build and push frontend Docker image
+        working-directory: ./quiz-app
+        run: |
+          docker build . -t ${{ secrets.DOCKER_USERNAME }}/frontend-js
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin 
+          docker push ${{ secrets.DOCKER_USERNAME }}/frontend-js    
 
-    - name: Run Trivy vulnerability scanner
-      run: |
-        docker run --rm \
-          -v /var/run/docker.sock:/var/run/docker.sock \
-          -v $(pwd):/project \
-          alpine/trivy:0.47.0 image --severity CRITICAL,HIGH --format sarif \
-          --output trivy-results.sarif ${{ secrets.DOCKER_USERNAME }}/frontend-js
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.17  # Stable version
+        with:
+          image-ref: 'docker.io/${{ secrets.DOCKER_USERNAME }}/frontend-js'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
 
-    - name: Upload Trivy SARIF results to GitHub
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: trivy-results.sarif
-
-    - name: Install Snyk CLI
-      uses: snyk/actions/setup@v3
-      with:
-        snyk-token: ${{ secrets.SNYK_TOKEN }}
+      - name: Install Snyk CLI
+        uses: snyk/actions/setup@v1  # Stable version
+        with:
+          snyk-token: ${{ secrets.SNYK_TOKEN }}
        
-    - name: Snyk Authenticate    
-      run: snyk auth ${{ secrets.SNYK_TOKEN }}
+      - name: Snyk Authenticate    
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
   
-    - name: Snyk Container monitor
-      run: snyk container monitor ${{ secrets.DOCKER_USERNAME }}/frontend-js --file=Dockerfile   
-      working-directory: ./quiz-app
+      - name: Snyk Container monitor
+        run: snyk container monitor ${{ secrets.DOCKER_USERNAME }}/frontend-js --file=Dockerfile   
+        working-directory: ./quiz-app
 
-    - name: Run Snyk to check for vulnerabilities in the Docker image
-      uses: snyk/actions/docker@v3
-      with:
-        image: ${{ secrets.DOCKER_USERNAME }}/frontend-js
-        args: --file=quiz-app/Dockerfile --severity-threshold=high
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      continue-on-error: true
+      - name: Run Snyk to check for vulnerabilities in the Docker image
+        uses: snyk/actions/docker@v1  # Stable version of snyk docker action
+        with:
+          image: ${{ secrets.DOCKER_USERNAME }}/frontend-js
+          args: --file=quiz-app/Dockerfile --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
 
   backend-image:
     needs: backend-security
@@ -221,48 +215,43 @@ jobs:
       security-events: write 
       actions: read
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
     
-    - name: Build and push backend Docker image
-      working-directory: ./backend
-      run: |
-        docker build . -t ${{ secrets.DOCKER_USERNAME }}/backend-api
-        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin 
-        docker push ${{ secrets.DOCKER_USERNAME }}/backend-api    
+      - name: Build and push backend Docker image
+        working-directory: ./backend
+        run: |
+          docker build . -t ${{ secrets.DOCKER_USERNAME }}/backend-api
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin 
+          docker push ${{ secrets.DOCKER_USERNAME }}/backend-api    
 
-    - name: Run Trivy vulnerability scanner
-      run: |
-        docker run --rm \
-          -v /var/run/docker.sock:/var/run/docker.sock \
-          -v $(pwd):/project \
-          alpine/trivy:0.47.0 image --severity CRITICAL,HIGH --format sarif \
-          --output trivy-results.sarif ${{ secrets.DOCKER_USERNAME }}/backend-api
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.17  # Stable version
+        with:
+          image-ref: 'docker.io/${{ secrets.DOCKER_USERNAME }}/backend-api'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH' 
         
-    - name: Upload Trivy SARIF results to GitHub
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: trivy-results.sarif
-        
-    - name: Install Snyk CLI
-      uses: snyk/actions/setup@v3
-      with:
-        snyk-token: ${{ secrets.SNYK_TOKEN }}
+      - name: Install Snyk CLI
+        uses: snyk/actions/setup@v1  # Stable version
+        with:
+          snyk-token: ${{ secrets.SNYK_TOKEN }}
      
-    - name: Snyk Authenticate    
-      run: snyk auth ${{ secrets.SNYK_TOKEN }}
+      - name: Snyk Authenticate    
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
-    - name: Snyk Container monitor
-      run: snyk container monitor ${{ secrets.DOCKER_USERNAME }}/backend-api --file=Dockerfile   
-      working-directory: ./backend
+      - name: Snyk Container monitor
+        run: snyk container monitor ${{ secrets.DOCKER_USERNAME }}/backend-api --file=Dockerfile   
+        working-directory: ./backend
 
-    - name: Run Snyk to check for vulnerabilities in the Docker image
-      uses: snyk/actions/docker@v3
-      with:
-        image: ${{ secrets.DOCKER_USERNAME }}/backend-api
-        args: --file=backend/Dockerfile --severity-threshold=high
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      continue-on-error: true
+      - name: Run Snyk to check for vulnerabilities in the Docker image
+        uses: snyk/actions/docker@v1  # Stable version
+        with:
+          image: ${{ secrets.DOCKER_USERNAME }}/backend-api
+          args: --file=backend/Dockerfile --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
 
   k8s-manifest-scan:
     needs: [backend-security, frontend-security]
@@ -270,7 +259,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Snyk to check Kubernetes manifest file for issues
-        uses: snyk/actions/iac@v3
+        uses: snyk/actions/iac@v1  # Stable version of snyk IaC action
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
